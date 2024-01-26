@@ -14,18 +14,14 @@ type Conf struct {
 	Enabled   string
 	MiniStyle bool
 
-	Delimiter string
-	PerCPU    bool
+	Delimiter     string
+	PerCPU        bool
+	DiskUsagePath string
 
 	CPUTpl  string
 	MemTpl  string
 	LoadTpl string
-}
-
-type Info struct {
-	CPU  *CPUInfo
-	Mem  *MemoryInfo
-	Load *LoadInfo
+	DiskTpl string
 }
 
 var (
@@ -51,6 +47,9 @@ var rootCmd = &cobra.Command{
 			if conf.MemTpl == defaultMemInfoTpl {
 				conf.MemTpl = defaultMiniMemInfoTpl
 			}
+			if conf.DiskTpl == defaultDiskInfoTpl {
+				conf.DiskTpl = defaultMiniDiskInfoTpl
+			}
 			if conf.LoadTpl == defaultLoadInfoTpl {
 				conf.LoadTpl = defaultMiniLoadInfoTpl
 			}
@@ -68,12 +67,18 @@ var rootCmd = &cobra.Command{
 			case "load":
 				info.Load = loadInfo()
 				tpls = append(tpls, conf.LoadTpl)
+			case "disk":
+				info.Disk = diskInfo(conf.DiskUsagePath)
+				tpls = append(tpls, conf.DiskTpl)
 			case "all":
 				if strings.ToLower(en) == "all" {
-					info.CPU = cpuInfo(conf.PerCPU)
-					info.Mem = memInfo()
-					info.Load = loadInfo()
-					tpls = append(tpls, conf.CPUTpl, conf.MemTpl, conf.LoadTpl)
+					info = Info{
+						CPU:  cpuInfo(conf.PerCPU),
+						Mem:  memInfo(),
+						Load: loadInfo(),
+						Disk: diskInfo(conf.DiskUsagePath),
+					}
+					tpls = append(tpls, conf.CPUTpl, conf.MemTpl, conf.LoadTpl, conf.DiskTpl)
 					break
 				}
 			}
@@ -107,8 +112,10 @@ func init() {
 	rootCmd.Flags().StringVar(&conf.CPUTpl, "cpu-tpl", defaultCPUInfoTpl, "CPU information rendering template")
 	rootCmd.Flags().StringVar(&conf.MemTpl, "mem-tpl", defaultMemInfoTpl, "Memory information rendering template")
 	rootCmd.Flags().StringVar(&conf.LoadTpl, "load-tpl", defaultLoadInfoTpl, "Load information rendering template")
+	rootCmd.Flags().StringVar(&conf.DiskTpl, "disk-tpl", defaultDiskInfoTpl, "Disk information rendering template")
 	rootCmd.Flags().StringVar(&conf.Delimiter, "delimiter", "|", "Delimiter between information areas")
 	rootCmd.Flags().BoolVar(&conf.PerCPU, "per-cpu", false, "Get the usage percentage of each CPU")
+	rootCmd.Flags().StringVar(&conf.DiskUsagePath, "disk-usage-path", "/", "Disk statistics path")
 }
 
 func main() {

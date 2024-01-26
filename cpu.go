@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-type CPUInfo struct {
-	Percent   []float64
-	InfoStats []cpu.InfoStat
-}
-
 func cpuInfo(percpu bool) *CPUInfo {
 	var info CPUInfo
 

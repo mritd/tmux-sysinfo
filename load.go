@@ -6,11 +6,6 @@ import (
 	"os"
 )
 
-type LoadInfo struct {
-	Stat *load.AvgStat
-	Misc *load.MiscStat
-}
-
 func loadInfo() *LoadInfo {
 	var info LoadInfo
 	a, err := load.Avg()

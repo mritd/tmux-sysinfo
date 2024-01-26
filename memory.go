@@ -6,11 +6,6 @@ import (
 	"os"
 )
 
-type MemoryInfo struct {
-	Stat *mem.VirtualMemoryStat
-	Swap *mem.SwapMemoryStat
-}
-
 func memInfo() *MemoryInfo {
 	var info MemoryInfo
 	v, err := mem.VirtualMemory()
