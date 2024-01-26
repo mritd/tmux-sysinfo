@@ -12,7 +12,7 @@ set -g @plugin 'mritd/tmux-sysinfo'
 
 然后使用快捷键 `Prefix + I` 执行安装即可.
 
-如果您未使用 tpm 也不必担心, tmux-sysinfo 采用 Go 语言编写, 且仅有一个二进制文件; 您可以直接在 Release 页面下载最新的版本, 并放置在任何位置.
+如果您未使用 tpm 也不必担心, tmux-sysinfo 采用 Go 语言编写, 且仅有一个二进制文件; 您可以直接在 [Release](https://github.com/mritd/tmux-sysinfo/releases) 页面下载最新的版本, 并放置在任何位置.
 
 ```sh
 # 以 macOS M1 芯片组为例
@@ -33,7 +33,7 @@ set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysin
 
 tmux-sysinfo 当前包含三部分输出内容: CPU、内存、系统负载; 默认情况下 tmux-sysinfo 输出样式如下:
 
-![]()
+![](images/SCR-20240126-mywx.jpeg)
 
 您可以使用 `--mini` 选项来显示最小化的样例:
 
@@ -41,7 +41,7 @@ tmux-sysinfo 当前包含三部分输出内容: CPU、内存、系统负载; 默
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo --mini) | [%H:%M]'
 ```
 
-![]()
+![](images/SCR-20240126-mzjk.png)
 
 除了内置的两种样式以外, tmux-sysinfo 允许使用 Go 模版完全自定义输出样式(您需要自行学习 Go 模版引擎语法), 您在模版引擎中可以读取的结构体如下所示(更深层次的属性请查看源码):
 
@@ -86,7 +86,7 @@ tmux-sysinfo 提供了三个选项来定义每一部分的输出模版:
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo --mem-tpl="MEM: {{.Mem.Stat.Used | humanizeIBytes}} + {{.Mem.Stat.Free | humanizeIBytes}}") | [%H:%M]'
 ```
 
-![]()
+![](images/SCR-20240126-mzts.jpeg)
 
 为了美化输出结果, tmux-sysinfo 内置了以下模版引擎函数用于格式化输出:
 
