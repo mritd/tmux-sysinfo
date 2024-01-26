@@ -55,7 +55,7 @@ esac
 # The directory where this plugin is located.
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ ! -f $CURRENT_DIR/tmux-mem-cpu-load ] && ! $(builtin type -P "tmux-mem-cpu-load" &> /dev/null) ; then
+if [ ! -f $CURRENT_DIR/tmux-sysinfo ] && ! $(builtin type -P "tmux-mem-cpu-load" &> /dev/null) ; then
     tmux run-shell "echo \"tmux-sysinfo not found. Attempting to download.\""
 
     pushd $CURRENT_DIR #Pushd to the directory where this plugin is located.
