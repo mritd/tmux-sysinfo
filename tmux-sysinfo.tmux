@@ -60,11 +60,18 @@ if [ ! -f $CURRENT_DIR/tmux-sysinfo ] && ! $(builtin type -P "tmux-mem-cpu-load"
 
     pushd $CURRENT_DIR #Pushd to the directory where this plugin is located.
 
-    curl -sSL $(curl -sSL $api_url | jq -r ".assets[].browser_download_url | select (. | test(\"${sys_arch}\"))") > tmux-sysinfo
-    if [ "$?" != "0" ]; then
-        tmux run-shell "echo \"tmux-sysinfo download failed!!!\""
-    else
+    if [ -f "offline/tmux-sysinfo-${sys_arch}" ]; then
+        tmux run-shell "echo \"Detected that the tmux-sysinfo offline file already exists, skip downloading...\""
+        mv offline/tmux-sysinfo-${sys_arch} tmux-sysinfo
         chmod +x tmux-sysinfo
-        tmux run-shell "echo \"tmux-sysinfo download success...\""
+    else
+        curl -sSL $(curl -sSL $api_url | jq -r ".assets[].browser_download_url | select (. | test(\"${sys_arch}\"))") > tmux-sysinfo
+        if [ "$?" != "0" ]; then
+            tmux run-shell "echo \"tmux-sysinfo download failed!!!\""
+        else
+            chmod +x tmux-sysinfo
+            tmux run-shell "echo \"tmux-sysinfo download success...\""
+        fi
     fi
 fi
+
