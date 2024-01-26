@@ -1,43 +1,45 @@
+EN | [ZH](./README_zh.md)
+
 ## Tmux SysInfo
 
 ![](images/SCR-20240126-nazl.png)
 
-> 这是一个用于获取系统 CPU、内存以及负载信息的 Tmux 插件.
+> This is a Tmux plugin for obtaining system CPU, memory, and load information.
 
-### 一、如何安装
+### How to install
 
-推荐使用 tpm 工具来管理 tmux 插件, 对于 tpm 用户您需要添加以下配置到 `~/.tmux.conf` 中:
+It is recommended to use the [tpm](https://github.com/tmux-plugins/tpm) tool to manage Tmux plugins. For tpm users, you need to add the following configuration to your `~/.tmux.conf` file:
 
 ```sh
 set -g @plugin 'mritd/tmux-sysinfo'
 ```
 
-然后使用快捷键 `Prefix + I` 执行安装即可.
+Then, use the shortcut `Prefix + I` to install it.
 
-如果您未使用 tpm 也不必担心, tmux-sysinfo 采用 Go 语言编写, 且仅有一个二进制文件; 您可以直接在 [Release](https://github.com/mritd/tmux-sysinfo/releases) 页面下载最新的版本, 并放置在任何位置.
+If you are not using tpm, don't worry. Tmux SysInfo is written in Go and consists of a single binary file. You can directly download the latest version from the [Release page](https://github.com/mritd/tmux-sysinfo/releases) and place it anywhere you like.
 
 ```sh
-# 以 macOS M1 芯片为例
+# As an example for the macOS M1 chip
 curl -sSL https://github.com/mritd/tmux-sysinfo/releases/download/v0.0.2/tmux-sysinfo-darwin-arm64 > /usr/local/bin/tmux-sysinfo
 chmod +x /usr/local/bin/tmux-sysinfo
 ```
 
-### 二、如何使用
+### How to use
 
-您需要在 `~/.tmux.conf` 中添加以下配置来激活 tmux-sysinfo:
+To activate tmux-sysinfo, you need to add the following configuration to your `~/.tmux.conf` file:
 
 ```sh
-# 注意, 如果手动安装的 tmux-sysinfo, 需要将文件路径替换为 /usr/local/bin/tmux-sysinfo
+# Note: If you have manually installed tmux-sysinfo, you need to replace the file path with /usr/local/bin/tmux-sysinfo.
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo) | [%H:%M]'
 ```
 
-### 三、自定义样式
+### Custom style
 
-tmux-sysinfo 当前包含三部分输出内容: CPU、内存、系统负载; 默认情况下 tmux-sysinfo 输出样式如下:
+The current version of tmux-sysinfo includes three sections of output: CPU, memory, and system load. By default, tmux-sysinfo has the following output style:
 
 ![](images/SCR-20240126-ncdy.png)
 
-您可以使用 `--mini` 选项来显示最小化的样例:
+Sure! Here's the minimized example of the tmux-sysinfo output using the `--mini` option:
 
 ```sh
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo --mini) | [%H:%M]'
@@ -45,36 +47,36 @@ set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysin
 
 ![](images/SCR-20240126-ncqy.png)
 
-除了内置的两种样式以外, tmux-sysinfo 允许使用 Go 模版完全自定义输出样式(您需要自行学习 Go 模版引擎语法), 您在模版引擎中可以读取的结构体如下所示(更深层次的属性请查看源码):
+In addition to the two built-in styles, tmux-sysinfo allows for fully customized output styles using Go templates(you will need to learn Go template engine syntax on your own). The structs that can be accessed within the template engine are shown below (for more detailed properties, please refer to the source code):
 
 ```go
-// 最顶级的结构体(.)
+// The top-level struct (.)
 type Info struct {
 	CPU  *CPUInfo
 	Mem  *MemoryInfo
 	Load *LoadInfo
 }
 
-// CPU 信息(.CPU)
+// CPU info(.CPU)
 type CPUInfo struct {
 	Percent   []float64
 	InfoStats []cpu.InfoStat
 }
 
-// 内存信息(.Mem)
+// Memory info(.Mem)
 type MemoryInfo struct {
 	Stat *mem.VirtualMemoryStat
 	Swap *mem.SwapMemoryStat
 }
 
-// 系统负载信息(.Load)
+// System load info(.Load)
 type LoadInfo struct {
 	Stat *load.AvgStat
 	Misc *load.MiscStat
 }
 ```
 
-tmux-sysinfo 提供了三个选项来定义每一部分的输出模版:
+tmux-sysinfo provides three options to define the output template for each section:
 
 ```sh
 --cpu-tpl string     CPU information rendering template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
@@ -82,7 +84,7 @@ tmux-sysinfo 提供了三个选项来定义每一部分的输出模版:
 --load-tpl string    Load information rendering template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
 ```
 
-您可以根据需要来自行调整输出模版, 例如您想要显示剩余内存空间, 你可以这样更改模版:
+You can adjust the output template according to your needs. For example, if you want to display the remaining memory space, you can make the following changes to the template:
 
 ```sh
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo --mem-tpl="MEM: {{.Mem.Stat.Used | humanizeIBytes}} + {{.Mem.Stat.Free | humanizeIBytes}}") | [%H:%M]'
@@ -90,43 +92,43 @@ set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysin
 
 ![](images/SCR-20240126-ndlz.png)
 
-为了美化输出结果, tmux-sysinfo 内置了以下模版引擎函数用于格式化输出:
+To beautify the output results, tmux-sysinfo provides the following built-in template engine functions for formatting the output:
 
-- `humanizeBytes`: 将 uint64 类型的纯数值转换为人类可读的格式, 例如 `82854982 -> 83 MB`
-- `humanizeIBytes`: 类似 `humanizeBytes` 不同之处是它以 `1024` 为单位计算, 例如 `82854982 -> 79 MiB`
-- `percentage`: 将 float64 类型的纯数值格式化成百分比字符串, 例如 `22.34123545 -> 22%`
+- `humanizeBytes`: Converts a pure numerical value of type uint64 into a human-readable format, for example `82854982 -> 83 MB`
+- `humanizeIBytes`: Similar to `humanizeBytes`, the difference is that it calculates based on the unit of 1024, for example `82854982 -> 79 MiB`
+- `percentage`: Formats a pure numerical value of type float64 into a percentage string, for example `22.34123545 -> 22%`
 
-### 四、其他说明
+### Other tips
 
-有些情况下由于 tmux-sysinfo 过长的输出可能导致截断, 你可以调整以下两个参数来解决这种问题:
+In some cases, the long output of tmux-sysinfo may be truncated. You can adjust the following two parameters to fix this issue:
 
 ```sh
-# 状态栏左侧最大长度
+# Maximum length of the left side of the status bar.
 set -g status-left-length 20
 
-# 状态栏右侧最大长度
+# Maximum length of the right side of the status bar.
 set -g status-right-length 60
 ```
 
-或许调整之后您会发现状态栏中间的窗口列表发生了左右偏移, 你可以通过以下选项强制窗口列表居中:
+After making adjustments, you may notice that the window list in the middle of the status bar is shifted to the left or right. You can force the window list to be centered using the following option:
 
 ```sh
 set -g status-justify absolute-centre
 ```
 
-**在极特殊情况下, 您可能期望只显示 CPU 和内存信息, 您可以通过 `--enabled` 选项来调整:**
+**In extremely rare cases, you may want to display only CPU and memory information. You can adjust this using the `--enabled` option:**
 
 ```sh
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo --enabled=cpu,mem) | [%H:%M]'
 ```
 
-同样如果您不满足于当前的显示顺序, 您同样可以该选项自定义:
+Similarly, if you are not satisfied with the current display order, you can make adjustments as follows:
 
 ```sh
 set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysinfo/tmux-sysinfo --enabled=mem,cpu,load) | [%H:%M]'
 ```
 
-**无论如何, 您始终可以通过 `--help` 命令查看最新文档, 以及直接执行 `tmux-sysinfo` 命令来查看样式**
+**In any case, you can always refer to the latest documentation by using the `--help` command or directly execute the `tmux-sysinfo` command to view the styles.**
 
 ```sh
 ~ ❯❯❯ tmux-sysinfo
