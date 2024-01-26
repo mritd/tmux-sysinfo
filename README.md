@@ -1,5 +1,7 @@
 ## Tmux SysInfo
 
+![](images/SCR-20240126-nazl.png)
+
 > 这是一个用于获取系统 CPU、内存以及负载信息的 Tmux 插件.
 
 ### 一、如何安装
