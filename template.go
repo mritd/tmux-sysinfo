@@ -9,24 +9,3 @@ const (
 	defaultMiniMemInfoTpl  = `M: {{.Mem.Stat.Used | humanizeBytes}}`
 	defaultMiniLoadInfoTpl = `L: {{.Load.Stat.Load1 | percentage}}`
 )
-
-func cpuInfoTpl(c *Conf) string {
-	if c.MiniStyle {
-		return defaultMiniCPUInfoTpl
-	}
-	return defaultCPUInfoTpl
-}
-
-func memInfoTpl(c *Conf) string {
-	if c.MiniStyle {
-		return defaultMiniMemInfoTpl
-	}
-	return defaultMemInfoTpl
-}
-
-func loadInfoTpl(c *Conf) string {
-	if c.MiniStyle {
-		return defaultMiniLoadInfoTpl
-	}
-	return defaultLoadInfoTpl
-}
