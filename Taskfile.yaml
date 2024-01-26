@@ -29,7 +29,7 @@ tasks:
       - task: mkdir
       - |
         GOOS={{.GOOS}} GOARCH={{.GOARCH}} GOARM={{.GOARM}} GOAMD64={{.GOAMD64}} GOMIPS={{.GOMIPS}} \
-        go build -trimpath -o build/tmux-sysinfo-{{.GOOS}}-{{.GOARCH}}{{if .GOAMD64}}-{{.GOAMD64}}{{end}} \
+        go build -trimpath -o build/tmux-sysinfo-{{.GOOS}}-{{.GOARCH}}{{if .GOAMD64}}-{{.GOAMD64}}{{end}}{{if .GOARM}}v{{.GOARM}}{{end}} \
           -ldflags "{{if not .DEBUG}}-w -s{{end}} \
           -X 'main.build={{.BUILD_DATE}}' \
           -X 'main.commit={{.COMMIT_SHA}}' \
