@@ -33,7 +33,7 @@ tasks:
           -ldflags "{{if not .DEBUG}}-w -s{{end}} \
           -X 'main.build={{.BUILD_DATE}}' \
           -X 'main.commit={{.COMMIT_SHA}}' \
-          -X 'main.version={{.VERSION}}' \
+          -X 'main.version={{.VERSION}}'" \
           {{if .DEBUG}}-gcflags "all=-N -l"{{end}}
 
 
