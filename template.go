@@ -1,11 +1,32 @@
 package main
 
-import "fmt"
-
 const (
 	defaultCPUInfoTpl  = `CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}`
 	defaultMemInfoTpl  = `MEM: {{.Mem.Stat.Used | humanizeIBytes}}`
 	defaultLoadInfoTpl = `LOAD: {{.Load.Stat.Load1 | percentage}}`
+
+	defaultMiniCPUInfoTpl  = `C: {{index .CPU.Percent 0 | percentage}}`
+	defaultMiniMemInfoTpl  = `M: {{.Mem.Stat.Used | humanizeIBytes}}`
+	defaultMiniLoadInfoTpl = `L: {{.Load.Stat.Load1 | percentage}}`
 )
 
-var defaultTpl = fmt.Sprintf("%s | %s | %s", defaultCPUInfoTpl, defaultMemInfoTpl, defaultLoadInfoTpl)
+func cpuInfoTpl(c *Conf) string {
+	if c.MiniStyle {
+		return defaultMiniCPUInfoTpl
+	}
+	return defaultCPUInfoTpl
+}
+
+func memInfoTpl(c *Conf) string {
+	if c.MiniStyle {
+		return defaultMiniMemInfoTpl
+	}
+	return defaultMemInfoTpl
+}
+
+func loadInfoTpl(c *Conf) string {
+	if c.MiniStyle {
+		return defaultMiniLoadInfoTpl
+	}
+	return defaultLoadInfoTpl
+}

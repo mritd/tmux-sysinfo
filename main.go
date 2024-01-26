@@ -11,7 +11,8 @@ import (
 )
 
 type Conf struct {
-	Enabled string
+	Enabled   string
+	MiniStyle bool
 
 	Delimiter string
 	PerCPU    bool
@@ -43,15 +44,20 @@ var rootCmd = &cobra.Command{
 		var info Info
 		var tpls []string
 
+		if conf.MiniStyle {
+			if conf.CPUTpl == defaultCPUInfoTpl {
+				conf.CPUTpl = defaultMiniCPUInfoTpl
+			}
+			if conf.MemTpl == defaultMemInfoTpl {
+				conf.MemTpl = defaultMiniMemInfoTpl
+			}
+			if conf.LoadTpl == defaultLoadInfoTpl {
+				conf.LoadTpl = defaultMiniLoadInfoTpl
+			}
+		}
+
 		enabled := strings.Split(conf.Enabled, ",")
 		for _, en := range enabled {
-			if strings.ToLower(en) == "all" {
-				info.CPU = cpuInfo(conf.PerCPU)
-				info.Mem = memInfo()
-				info.Load = loadInfo()
-				tpls = append(tpls, conf.CPUTpl, conf.MemTpl, conf.LoadTpl)
-				break
-			}
 			switch strings.ToLower(en) {
 			case "cpu":
 				info.CPU = cpuInfo(conf.PerCPU)
@@ -62,6 +68,14 @@ var rootCmd = &cobra.Command{
 			case "load":
 				info.Load = loadInfo()
 				tpls = append(tpls, conf.LoadTpl)
+			case "all":
+				if strings.ToLower(en) == "all" {
+					info.CPU = cpuInfo(conf.PerCPU)
+					info.Mem = memInfo()
+					info.Load = loadInfo()
+					tpls = append(tpls, conf.CPUTpl, conf.MemTpl, conf.LoadTpl)
+					break
+				}
 			}
 		}
 
@@ -91,6 +105,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.Flags().SortFlags = false
 	rootCmd.Flags().StringVar(&conf.Enabled, "enabled", "all", "Which information output is enabled")
+	rootCmd.Flags().BoolVar(&conf.MiniStyle, "mini", false, "Use default mini template")
 	rootCmd.Flags().StringVar(&conf.CPUTpl, "cpu-tpl", defaultCPUInfoTpl, "CPU information rendering template")
 	rootCmd.Flags().StringVar(&conf.MemTpl, "mem-tpl", defaultMemInfoTpl, "Memory information rendering template")
 	rootCmd.Flags().StringVar(&conf.LoadTpl, "load-tpl", defaultLoadInfoTpl, "Load information rendering template")
