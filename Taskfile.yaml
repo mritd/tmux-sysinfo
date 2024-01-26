@@ -1,0 +1,137 @@
+version: '3'
+
+dotenv: ['.env', '{{.HOME}}/.user.secret']
+
+vars:
+  VERSION:
+    sh: git describe --tags --always
+  COMMIT_SHA:
+    sh: git rev-parse HEAD
+  BUILD_DATE:
+    sh: date '+%F %T'
+
+tasks:
+  clean:
+    desc: Clean Up Build Cache Files
+    cmds:
+      - rm -rf build
+  mkdir:
+    desc: Create Build Dir
+    cmds:
+      - mkdir -p build
+    status:
+      - test -d build
+
+  build-tmux-sysinfo:
+    desc: Build Tmux Sysinfo
+    label: build-{{.PLATFORM}}
+    cmds:
+      - task: mkdir
+      - |
+        GOOS={{.GOOS}} GOARCH={{.GOARCH}} GOARM={{.GOARM}} GOAMD64={{.GOAMD64}} GOMIPS={{.GOMIPS}} \
+        go build -trimpath -o build/tmux-sysinfo-{{.GOOS}}-{{.GOARCH}}{{if .GOAMD64}}-{{.GOAMD64}}{{end}} \
+          -ldflags "{{if not .DEBUG}}-w -s{{end}} \
+          -X 'main.build={{.BUILD_DATE}}' \
+          -X 'main.commit={{.COMMIT_SHA}}' \
+          -X 'main.version={{.VERSION}}' \
+          {{if .DEBUG}}-gcflags "all=-N -l"{{end}}
+
+
+  linux-386:
+    desc: Build Tmux Sysinfo(linux/386)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-386,
+          GOOS: linux,
+          GOARCH: 386,
+        }
+  linux-amd64:
+    desc: Build Tmux Sysinfo(linux/amd64)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-amd64,
+          GOOS: linux,
+          GOARCH: amd64,
+        }
+  linux-amd64-v3:
+    desc: Build Tmux Sysinfo(linux/amd64-v3)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-amd64-v3,
+          GOOS: linux,
+          GOARCH: amd64,
+          GOAMD64: v3
+        }
+  linux-arm64:
+    desc: Build Tmux Sysinfo(linux/arm64)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-arm64,
+          GOOS: linux,
+          GOARCH: arm64
+        }
+  linux-armv5:
+    desc: Build Tmux Sysinfo(linux/armv5)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-armv5,
+          GOOS: linux,
+          GOARCH: arm,
+          GOARM: 5
+        }
+  linux-armv6:
+    desc: Build Tmux Sysinfo(linux/armv6)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-armv6,
+          GOOS: linux,
+          GOARCH: arm,
+          GOARM: 6
+        }
+  linux-armv7:
+    desc: Build Tmux Sysinfo(linux/armv7)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: linux-armv7,
+          GOOS: linux,
+          GOARCH: arm,
+          GOARM: 7
+        }
+  darwin-amd64:
+    desc: Build Tmux Sysinfo(darwin/amd64)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: darwin-amd64,
+          GOOS: darwin,
+          GOARCH: amd64,
+        }
+  darwin-arm64:
+    desc: Build Tmux Sysinfo(darwin/arm64)
+    cmds:
+      - task: build-tmux-sysinfo
+        vars: {
+          PLATFORM: darwin-arm64,
+          GOOS: darwin,
+          GOARCH: arm64,
+        }
+
+  default:
+    cmds:
+      - task: clean
+      - task: linux-386
+      - task: linux-amd64
+      - task: linux-amd64-v3
+      - task: linux-arm64
+      - task: linux-armv5
+      - task: linux-armv6
+      - task: linux-armv7
+      - task: darwin-amd64
+      - task: darwin-arm64
