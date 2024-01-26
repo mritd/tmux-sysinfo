@@ -80,10 +80,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		tpl, err := template.New("info").Funcs(template.FuncMap{
-			"humanizeBytes":     humanize.Bytes,
-			"humanizeIBytes":    humanize.IBytes,
-			"humanizeBigBytes":  humanize.BigBytes,
-			"humanizeBigIBytes": humanize.BigIBytes,
+			"humanizeBytes":  humanize.Bytes,
+			"humanizeIBytes": humanize.IBytes,
 			"percentage": func(f float64) string {
 				return fmt.Sprintf("%.0f%%", f)
 			},
