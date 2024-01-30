@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -14,9 +13,11 @@ type Conf struct {
 	Enabled   string
 	MiniStyle bool
 
-	Delimiter     string
-	PerCPU        bool
-	DiskUsagePath string
+	Delimiter         string
+	PerCPU            bool
+	DiskUsagePath     string
+	ProgressBarFilled string
+	ProgressBarBlank  string
 
 	CPUTpl  string
 	MemTpl  string
@@ -84,13 +85,7 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		tpl, err := template.New("info").Funcs(template.FuncMap{
-			"humanizeBytes":  humanize.Bytes,
-			"humanizeIBytes": humanize.IBytes,
-			"percentage": func(f float64) string {
-				return fmt.Sprintf("%.0f%%", f)
-			},
-		}).Parse(strings.Join(tpls, " "+conf.Delimiter+" "))
+		tpl, err := template.New("info").Funcs(funcMap).Parse(strings.Join(tpls, " "+conf.Delimiter+" "))
 		if err != nil {
 			return err
 		}
@@ -116,6 +111,8 @@ func init() {
 	rootCmd.Flags().StringVar(&conf.Delimiter, "delimiter", "|", "Delimiter between information areas")
 	rootCmd.Flags().BoolVar(&conf.PerCPU, "per-cpu", false, "Get the usage percentage of each CPU")
 	rootCmd.Flags().StringVar(&conf.DiskUsagePath, "disk-usage-path", "/", "Disk statistics path")
+	rootCmd.Flags().StringVar(&conf.ProgressBarFilled, "progress-bar-filled", "≣", "Progress bar completion character")
+	rootCmd.Flags().StringVar(&conf.ProgressBarBlank, "progress-bar-blank", " ", "Progress bar blank character")
 }
 
 func main() {
