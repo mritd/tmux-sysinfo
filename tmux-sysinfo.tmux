@@ -55,10 +55,10 @@ esac
 # The directory where this plugin is located.
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ ! -f $CURRENT_DIR/tmux-sysinfo ] && ! $(builtin type -P "tmux-mem-cpu-load" &> /dev/null) ; then
+if [ ! -f ${CURRENT_DIR}/tmux-sysinfo ] && ! $(builtin type -P "tmux-sysinfo" &> /dev/null) ; then
     tmux run-shell "echo \"tmux-sysinfo not found. Attempting to download.\""
 
-    pushd $CURRENT_DIR #Pushd to the directory where this plugin is located.
+    pushd ${CURRENT_DIR} #Pushd to the directory where this plugin is located.
 
     if [ -f "offline/tmux-sysinfo-${sys_arch}" ]; then
         tmux run-shell "echo \"Detected that the tmux-sysinfo offline file already exists, skip downloading...\""
