@@ -64,20 +64,20 @@ type HostInfo struct {
 
 // CPU 信息(.CPU)
 type CPUInfo struct {
-	Percent   []float64
-	InfoStats []cpu.InfoStat
+    Percent   []float64
+    InfoStats []cpu.InfoStat
 }
 
 // 内存信息(.Mem)
 type MemoryInfo struct {
-	Stat *mem.VirtualMemoryStat
-	Swap *mem.SwapMemoryStat
+    Stat *mem.VirtualMemoryStat
+    Swap *mem.SwapMemoryStat
 }
 
 // 系统负载信息(.Load)
 type LoadInfo struct {
-	Stat *load.AvgStat
-	Misc *load.MiscStat
+    Stat *load.AvgStat
+    Misc *load.MiscStat
 }
 
 // Disk Info(.Disk)
