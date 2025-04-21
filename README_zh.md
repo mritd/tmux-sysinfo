@@ -50,9 +50,16 @@ set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysin
 ```go
 // 最顶级的结构体(.)
 type Info struct {
-	CPU  *CPUInfo
-	Mem  *MemoryInfo
-	Load *LoadInfo
+Host *HostInfo
+    CPU  *CPUInfo
+    Mem  *MemoryInfo
+    Load *LoadInfo
+    Disk *DiskInfo
+}
+
+// Host info(.Host)
+type HostInfo struct {
+    *host.InfoStat
 }
 
 // CPU 信息(.CPU)
@@ -72,14 +79,22 @@ type LoadInfo struct {
 	Stat *load.AvgStat
 	Misc *load.MiscStat
 }
+
+// Disk Info(.Disk)
+type DiskInfo struct {
+    Stat     *disk.UsageStat
+    Counters []*disk.IOCountersStat
+}
 ```
 
 tmux-sysinfo 提供了三个选项来定义每一部分的输出模版:
 
 ```sh
+--host-tpl string    Host information rendering template (default "OS: {{.Host.OS}}/{{.Host.KernelVersion}}")
 --cpu-tpl string     CPU information rendering template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
 --mem-tpl string     Memory information rendering template (default "MEM: {{.Mem.Stat.Used | humanizeIBytes}}")
 --load-tpl string    Load information rendering template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
+--disk-tpl string    Disk information rendering template (default "DISK: {{.Disk.Stat.UsedPercent | percentage}}")
 ```
 
 您可以根据需要来自行调整输出模版, 例如您想要显示剩余内存空间, 你可以这样更改模版:
@@ -130,7 +145,7 @@ set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysin
 
 ```sh
 ~ ❯❯❯ tmux-sysinfo
-CPU: Apple M1 Max 8% | MEM: 16 GiB | LOAD: 5%
+OS: darwin/24.4.0 | CPU: Apple M1 Max 18% | MEM: 41 GB | LOAD: 4% | DISK: 73%
 ~ ❯❯❯ tmux-sysinfo -h
 Tmux system info plugin
 
@@ -138,14 +153,19 @@ Usage:
   tmux-sysinfo [flags]
 
 Flags:
-      --enabled string     Which information output is enabled (default "all")
-      --mini               Use default mini template
-      --cpu-tpl string     CPU information rendering template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
-      --mem-tpl string     Memory information rendering template (default "MEM: {{.Mem.Stat.Used | humanizeIBytes}}")
-      --load-tpl string    Load information rendering template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
-      --delimiter string   Delimiter between information areas (default "|")
-      --per-cpu            Get the usage percentage of each CPU
-  -h, --help               help for tmux-sysinfo
-  -v, --version            version for tmux-sysinfo
+      --enabled string               Which information output is enabled (default "all")
+      --mini                         Use default mini template
+      --host-tpl string              Host information rendering template (default "OS: {{.Host.OS}}/{{.Host.KernelVersion}}")
+      --cpu-tpl string               CPU information rendering template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
+      --mem-tpl string               Memory information rendering template (default "MEM: {{.Mem.Stat.Used | humanizeBytes}}")
+      --load-tpl string              Load information rendering template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
+      --disk-tpl string              Disk information rendering template (default "DISK: {{.Disk.Stat.UsedPercent | percentage}}")
+      --delimiter string             Delimiter between information areas (default "|")
+      --per-cpu                      Get the usage percentage of each CPU
+      --disk-usage-path string       Disk statistics path (default "/")
+      --progress-bar-filled string   Progress bar completion character (default "≣")
+      --progress-bar-blank string    Progress bar blank character (default " ")
+  -h, --help                         help for tmux-sysinfo
+  -v, --version                      version for tmux-sysinfo
 ```
 
