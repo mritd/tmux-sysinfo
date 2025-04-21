@@ -19,6 +19,7 @@ type Conf struct {
 	ProgressBarFilled string
 	ProgressBarBlank  string
 
+	HostTpl string
 	CPUTpl  string
 	MemTpl  string
 	LoadTpl string
@@ -42,6 +43,9 @@ var rootCmd = &cobra.Command{
 		var tpls []string
 
 		if conf.MiniStyle {
+			if conf.HostTpl == defaultHostInfoTpl {
+				conf.HostTpl = defaultMiniHostInfoTpl
+			}
 			if conf.CPUTpl == defaultCPUInfoTpl {
 				conf.CPUTpl = defaultMiniCPUInfoTpl
 			}
@@ -59,6 +63,9 @@ var rootCmd = &cobra.Command{
 		enabled := strings.Split(conf.Enabled, ",")
 		for _, en := range enabled {
 			switch strings.ToLower(en) {
+			case "host":
+				info.Host = hostInfo()
+				tpls = append(tpls, conf.HostTpl)
 			case "cpu":
 				info.CPU = cpuInfo(conf.PerCPU)
 				tpls = append(tpls, conf.CPUTpl)
@@ -74,12 +81,13 @@ var rootCmd = &cobra.Command{
 			case "all":
 				if strings.ToLower(en) == "all" {
 					info = Info{
+						Host: hostInfo(),
 						CPU:  cpuInfo(conf.PerCPU),
 						Mem:  memInfo(),
 						Load: loadInfo(),
 						Disk: diskInfo(conf.DiskUsagePath),
 					}
-					tpls = append(tpls, conf.CPUTpl, conf.MemTpl, conf.LoadTpl, conf.DiskTpl)
+					tpls = append(tpls, conf.HostTpl, conf.CPUTpl, conf.MemTpl, conf.LoadTpl, conf.DiskTpl)
 					break
 				}
 			}
@@ -104,6 +112,7 @@ func init() {
 	rootCmd.Flags().SortFlags = false
 	rootCmd.Flags().StringVar(&conf.Enabled, "enabled", "all", "Which information output is enabled")
 	rootCmd.Flags().BoolVar(&conf.MiniStyle, "mini", false, "Use default mini template")
+	rootCmd.Flags().StringVar(&conf.HostTpl, "host-tpl", defaultHostInfoTpl, "Host information rendering template")
 	rootCmd.Flags().StringVar(&conf.CPUTpl, "cpu-tpl", defaultCPUInfoTpl, "CPU information rendering template")
 	rootCmd.Flags().StringVar(&conf.MemTpl, "mem-tpl", defaultMemInfoTpl, "Memory information rendering template")
 	rootCmd.Flags().StringVar(&conf.LoadTpl, "load-tpl", defaultLoadInfoTpl, "Load information rendering template")
