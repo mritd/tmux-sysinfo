@@ -83,16 +83,16 @@ type LoadInfo struct {
 // Disk Info(.Disk)
 type DiskInfo struct {
     Stat     *disk.UsageStat
-    Counters []*disk.IOCountersStat
+    Counters []disk.IOCountersStat
 }
 ```
 
 tmux-sysinfo 提供了三个选项来定义每一部分的输出模版:
 
 ```sh
---host-tpl string    Host information rendering template (default "OS: {{.Host.OS}}/{{.Host.KernelVersion}}")
+--host-tpl string    Host information rendering template (default "HOST: {{.Host.OS}}/{{.Host.KernelVersion}}")
 --cpu-tpl string     CPU information rendering template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
---mem-tpl string     Memory information rendering template (default "MEM: {{.Mem.Stat.Used | humanizeIBytes}}")
+--mem-tpl string     Memory information rendering template (default "MEM: {{.Mem.Stat.Used | humanizeBytes}}")
 --load-tpl string    Load information rendering template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
 --disk-tpl string    Disk information rendering template (default "DISK: {{.Disk.Stat.UsedPercent | percentage}}")
 ```
@@ -145,7 +145,7 @@ set -g status-right '#[fg=brightcyan]♦  #($TMUX_PLUGIN_MANAGER_PATH/tmux-sysin
 
 ```sh
 ~ ❯❯❯ tmux-sysinfo
-OS: darwin/24.4.0 | CPU: Apple M1 Max 18% | MEM: 41 GB | LOAD: 4% | DISK: 73%
+HOST: darwin/24.6.0 | CPU: Apple M1 Max 18% | MEM: 41 GB | LOAD: 4% | DISK: 73%
 ~ ❯❯❯ tmux-sysinfo -h
 Tmux system info plugin
 
@@ -153,18 +153,20 @@ Usage:
   tmux-sysinfo [flags]
 
 Flags:
-      --enabled string               Which information output is enabled (default "all")
-      --mini                         Use default mini template
-      --host-tpl string              Host information rendering template (default "OS: {{.Host.OS}}/{{.Host.KernelVersion}}")
-      --cpu-tpl string               CPU information rendering template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
-      --mem-tpl string               Memory information rendering template (default "MEM: {{.Mem.Stat.Used | humanizeBytes}}")
-      --load-tpl string              Load information rendering template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
-      --disk-tpl string              Disk information rendering template (default "DISK: {{.Disk.Stat.UsedPercent | percentage}}")
-      --delimiter string             Delimiter between information areas (default "|")
-      --per-cpu                      Get the usage percentage of each CPU
-      --disk-usage-path string       Disk statistics path (default "/")
-      --progress-bar-filled string   Progress bar completion character (default "≣")
+      --enabled string               Which information to collect (host,cpu,mem,load,disk,all) (default "all")
+      --mini                         Use mini template style
+      --lite                         Skip rarely-used expensive data (swap, load misc, disk IO)
+      --delimiter string             Delimiter between info sections (default "|")
+      --per-cpu                      Get usage percentage for each CPU
+      --disk-usage-path string       Path for disk usage statistics (default "/")
+      --cpu-interval duration        CPU sampling interval (default 1s)
+      --progress-bar-filled string   Progress bar filled character (default "≣")
       --progress-bar-blank string    Progress bar blank character (default " ")
+      --host-tpl string              Host info template (default "HOST: {{.Host.OS}}/{{.Host.KernelVersion}}")
+      --cpu-tpl string               CPU info template (default "CPU: {{(index .CPU.InfoStats 0).ModelName}} {{index .CPU.Percent 0 | percentage}}")
+      --mem-tpl string               Memory info template (default "MEM: {{.Mem.Stat.Used | humanizeBytes}}")
+      --load-tpl string              Load info template (default "LOAD: {{.Load.Stat.Load1 | percentage}}")
+      --disk-tpl string              Disk info template (default "DISK: {{.Disk.Stat.UsedPercent | percentage}}")
   -h, --help                         help for tmux-sysinfo
   -v, --version                      version for tmux-sysinfo
 ```
