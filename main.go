@@ -1,21 +1,26 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
-	"text/template"
+	"time"
+
+	"github.com/mritd/tmux-sysinfo/internal/collector"
+	"github.com/mritd/tmux-sysinfo/internal/formatter"
+	"github.com/spf13/cobra"
 )
 
-type Conf struct {
+// Config holds CLI configuration
+type Config struct {
 	Enabled   string
 	MiniStyle bool
+	Lite      bool
 
 	Delimiter         string
 	PerCPU            bool
 	DiskUsagePath     string
+	CPUInterval       time.Duration
 	ProgressBarFilled string
 	ProgressBarBlank  string
 
@@ -32,96 +37,117 @@ var (
 	version string
 )
 
-var conf Conf
+var cfg Config
 
 var rootCmd = &cobra.Command{
 	Use:     "tmux-sysinfo",
 	Short:   "Tmux system info plugin",
 	Version: fmt.Sprintf("%s %s %s", version, build, commit),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var info Info
-		var tpls []string
+	RunE:    run,
+}
 
-		if conf.MiniStyle {
-			if conf.HostTpl == defaultHostInfoTpl {
-				conf.HostTpl = defaultMiniHostInfoTpl
-			}
-			if conf.CPUTpl == defaultCPUInfoTpl {
-				conf.CPUTpl = defaultMiniCPUInfoTpl
-			}
-			if conf.MemTpl == defaultMemInfoTpl {
-				conf.MemTpl = defaultMiniMemInfoTpl
-			}
-			if conf.DiskTpl == defaultDiskInfoTpl {
-				conf.DiskTpl = defaultMiniDiskInfoTpl
-			}
-			if conf.LoadTpl == defaultLoadInfoTpl {
-				conf.LoadTpl = defaultMiniLoadInfoTpl
-			}
-		}
+func run(cmd *cobra.Command, args []string) error {
+	// Parse enabled collectors
+	enabled := strings.Split(cfg.Enabled, ",")
+	for i := range enabled {
+		enabled[i] = strings.ToLower(strings.TrimSpace(enabled[i]))
+	}
+	names, _ := collector.ParseNames(enabled)
 
-		enabled := strings.Split(conf.Enabled, ",")
-		for _, en := range enabled {
-			switch strings.ToLower(en) {
-			case "host":
-				info.Host = hostInfo()
-				tpls = append(tpls, conf.HostTpl)
-			case "cpu":
-				info.CPU = cpuInfo(conf.PerCPU)
-				tpls = append(tpls, conf.CPUTpl)
-			case "mem", "memory":
-				info.Mem = memInfo()
-				tpls = append(tpls, conf.MemTpl)
-			case "load":
-				info.Load = loadInfo()
-				tpls = append(tpls, conf.LoadTpl)
-			case "disk":
-				info.Disk = diskInfo(conf.DiskUsagePath)
-				tpls = append(tpls, conf.DiskTpl)
-			case "all":
-				if strings.ToLower(en) == "all" {
-					info = Info{
-						Host: hostInfo(),
-						CPU:  cpuInfo(conf.PerCPU),
-						Mem:  memInfo(),
-						Load: loadInfo(),
-						Disk: diskInfo(conf.DiskUsagePath),
-					}
-					tpls = append(tpls, conf.HostTpl, conf.CPUTpl, conf.MemTpl, conf.LoadTpl, conf.DiskTpl)
-					break
-				}
-			}
-		}
+	if len(names) == 0 {
+		return fmt.Errorf("no valid collectors specified in --enabled")
+	}
 
-		tpl, err := template.New("info").Funcs(funcMap).Parse(strings.Join(tpls, " "+conf.Delimiter+" "))
-		if err != nil {
-			return err
-		}
+	// Setup collector options
+	opts := collector.Options{
+		PerCPU:        cfg.PerCPU,
+		DiskUsagePath: cfg.DiskUsagePath,
+		CPUInterval:   cfg.CPUInterval,
+		Lite:          cfg.Lite,
+	}
 
-		var buf bytes.Buffer
-		if err = tpl.Execute(&buf, info); err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-			return err
-		}
-		fmt.Println(buf.String())
-		return nil
-	},
+	// Collect system info concurrently
+	mgr := collector.NewManager(opts)
+	info := mgr.Collect(names)
+
+	// Setup templates
+	tpls := buildTemplates(cmd)
+
+	// Setup funcmap with progress bar config
+	funcMap := formatter.NewFuncMapBuilder().
+		WithProgressBar(formatter.ProgressBarConfig{
+			Filled: cfg.ProgressBarFilled,
+			Blank:  cfg.ProgressBarBlank,
+		}).
+		Build()
+
+	// Render output
+	renderer := formatter.NewRenderer(tpls, funcMap, cfg.Delimiter)
+	output, err := renderer.Render(info, names)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		return err
+	}
+
+	fmt.Println(output)
+	return nil
+}
+
+func buildTemplates(cmd *cobra.Command) formatter.Templates {
+	var tpls formatter.Templates
+	if cfg.MiniStyle {
+		tpls = formatter.MiniTemplates()
+	} else {
+		tpls = formatter.DefaultTemplates()
+	}
+
+	// Override only if the user explicitly set the flag; otherwise the style
+	// selection above already applied the correct Mini or Default template.
+	if cmd.Flags().Changed("host-tpl") {
+		tpls.Host = cfg.HostTpl
+	}
+	if cmd.Flags().Changed("cpu-tpl") {
+		tpls.CPU = cfg.CPUTpl
+	}
+	if cmd.Flags().Changed("mem-tpl") {
+		tpls.Mem = cfg.MemTpl
+	}
+	if cmd.Flags().Changed("load-tpl") {
+		tpls.Load = cfg.LoadTpl
+	}
+	if cmd.Flags().Changed("disk-tpl") {
+		tpls.Disk = cfg.DiskTpl
+	}
+
+	return tpls
 }
 
 func init() {
 	rootCmd.Flags().SortFlags = false
-	rootCmd.Flags().StringVar(&conf.Enabled, "enabled", "all", "Which information output is enabled")
-	rootCmd.Flags().BoolVar(&conf.MiniStyle, "mini", false, "Use default mini template")
-	rootCmd.Flags().StringVar(&conf.HostTpl, "host-tpl", defaultHostInfoTpl, "Host information rendering template")
-	rootCmd.Flags().StringVar(&conf.CPUTpl, "cpu-tpl", defaultCPUInfoTpl, "CPU information rendering template")
-	rootCmd.Flags().StringVar(&conf.MemTpl, "mem-tpl", defaultMemInfoTpl, "Memory information rendering template")
-	rootCmd.Flags().StringVar(&conf.LoadTpl, "load-tpl", defaultLoadInfoTpl, "Load information rendering template")
-	rootCmd.Flags().StringVar(&conf.DiskTpl, "disk-tpl", defaultDiskInfoTpl, "Disk information rendering template")
-	rootCmd.Flags().StringVar(&conf.Delimiter, "delimiter", "|", "Delimiter between information areas")
-	rootCmd.Flags().BoolVar(&conf.PerCPU, "per-cpu", false, "Get the usage percentage of each CPU")
-	rootCmd.Flags().StringVar(&conf.DiskUsagePath, "disk-usage-path", "/", "Disk statistics path")
-	rootCmd.Flags().StringVar(&conf.ProgressBarFilled, "progress-bar-filled", "≣", "Progress bar completion character")
-	rootCmd.Flags().StringVar(&conf.ProgressBarBlank, "progress-bar-blank", " ", "Progress bar blank character")
+
+	// Basic options
+	rootCmd.Flags().StringVar(&cfg.Enabled, "enabled", "all", "Which information to collect (host,cpu,mem,load,disk,all)")
+	rootCmd.Flags().BoolVar(&cfg.MiniStyle, "mini", false, "Use mini template style")
+	rootCmd.Flags().BoolVar(&cfg.Lite, "lite", false, "Skip rarely-used expensive data (swap, load misc, disk IO)")
+	rootCmd.Flags().StringVar(&cfg.Delimiter, "delimiter", "|", "Delimiter between info sections")
+
+	// Collector options
+	rootCmd.Flags().BoolVar(&cfg.PerCPU, "per-cpu", false, "Get usage percentage for each CPU")
+	rootCmd.Flags().StringVar(&cfg.DiskUsagePath, "disk-usage-path", "/", "Path for disk usage statistics")
+	rootCmd.Flags().DurationVar(&cfg.CPUInterval, "cpu-interval", time.Second, "CPU sampling interval")
+
+	// Progress bar options
+	defaultBar := formatter.DefaultProgressBar()
+	rootCmd.Flags().StringVar(&cfg.ProgressBarFilled, "progress-bar-filled", defaultBar.Filled, "Progress bar filled character")
+	rootCmd.Flags().StringVar(&cfg.ProgressBarBlank, "progress-bar-blank", defaultBar.Blank, "Progress bar blank character")
+
+	// Template options
+	defaults := formatter.DefaultTemplates()
+	rootCmd.Flags().StringVar(&cfg.HostTpl, "host-tpl", defaults.Host, "Host info template")
+	rootCmd.Flags().StringVar(&cfg.CPUTpl, "cpu-tpl", defaults.CPU, "CPU info template")
+	rootCmd.Flags().StringVar(&cfg.MemTpl, "mem-tpl", defaults.Mem, "Memory info template")
+	rootCmd.Flags().StringVar(&cfg.LoadTpl, "load-tpl", defaults.Load, "Load info template")
+	rootCmd.Flags().StringVar(&cfg.DiskTpl, "disk-tpl", defaults.Disk, "Disk info template")
 }
 
 func main() {

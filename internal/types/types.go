@@ -43,5 +43,5 @@ type LoadInfo struct {
 // DiskInfo contains disk statistics
 type DiskInfo struct {
 	Stat     *disk.UsageStat
-	Counters []*disk.IOCountersStat
+	Counters []disk.IOCountersStat
 }

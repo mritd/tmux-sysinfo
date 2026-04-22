@@ -40,69 +40,58 @@ type Options struct {
 	Lite bool
 }
 
-// DefaultOptions returns default collector options
-func DefaultOptions() Options {
-	return Options{
-		PerCPU:        false,
-		DiskUsagePath: "/",
-		CPUInterval:   time.Second,
-		Lite:          false,
-	}
-}
-
 // Collector defines the interface for system info collectors
 type Collector interface {
 	Name() CollectorName
 	Collect() error
 }
 
-// Manager manages multiple collectors and runs them concurrently
+// Manager drives concurrent collection of selected system info sources.
 type Manager struct {
 	opts Options
-	info *types.Info
-	mu   sync.Mutex
 }
 
-// NewManager creates a new collector manager
+// NewManager creates a new collector manager.
 func NewManager(opts Options) *Manager {
-	return &Manager{
-		opts: opts,
-		info: &types.Info{},
-	}
+	return &Manager{opts: opts}
 }
 
-// Collect runs the specified collectors concurrently
+// Collect runs the specified collectors concurrently and returns the aggregated
+// Info. Duplicate names are collapsed so each collector runs at most once — this
+// guarantees each goroutine writes a distinct field of *types.Info, which the
+// Go memory model treats as independent memory locations; wg.Wait() provides
+// the happens-before for the return.
 func (m *Manager) Collect(names []CollectorName) *types.Info {
+	info := &types.Info{}
 	var wg sync.WaitGroup
-
+	seen := make(map[CollectorName]struct{}, len(names))
 	for _, name := range names {
+		if _, dup := seen[name]; dup {
+			continue
+		}
+		seen[name] = struct{}{}
 		wg.Add(1)
 		go func(n CollectorName) {
 			defer wg.Done()
-			m.collect(n)
+			switch n {
+			case NameHost:
+				info.Host = m.collectHost()
+			case NameCPU:
+				info.CPU = m.collectCPU()
+			case NameMem:
+				info.Mem = m.collectMem()
+			case NameLoad:
+				info.Load = m.collectLoad()
+			case NameDisk:
+				info.Disk = m.collectDisk()
+			}
 		}(name)
 	}
-
 	wg.Wait()
-	return m.info
+	return info
 }
 
-func (m *Manager) collect(name CollectorName) {
-	switch name {
-	case NameHost:
-		m.collectHost()
-	case NameCPU:
-		m.collectCPU()
-	case NameMem:
-		m.collectMem()
-	case NameLoad:
-		m.collectLoad()
-	case NameDisk:
-		m.collectDisk()
-	}
-}
-
-func (m *Manager) collectHost() {
+func (m *Manager) collectHost() *types.HostInfo {
 	info := &types.HostInfo{}
 	i, err := host.Info()
 	if err != nil {
@@ -110,13 +99,10 @@ func (m *Manager) collectHost() {
 	} else {
 		info.InfoStat = i
 	}
-
-	m.mu.Lock()
-	m.info.Host = info
-	m.mu.Unlock()
+	return info
 }
 
-func (m *Manager) collectCPU() {
+func (m *Manager) collectCPU() *types.CPUInfo {
 	info := &types.CPUInfo{}
 
 	i, err := cpu.Info()
@@ -133,12 +119,10 @@ func (m *Manager) collectCPU() {
 		info.Percent = p
 	}
 
-	m.mu.Lock()
-	m.info.CPU = info
-	m.mu.Unlock()
+	return info
 }
 
-func (m *Manager) collectMem() {
+func (m *Manager) collectMem() *types.MemoryInfo {
 	info := &types.MemoryInfo{}
 
 	v, err := mem.VirtualMemory()
@@ -148,7 +132,6 @@ func (m *Manager) collectMem() {
 		info.Stat = v
 	}
 
-	// Skip swap memory in lite mode (rarely used in templates)
 	if !m.opts.Lite {
 		s, err := mem.SwapMemory()
 		if err != nil {
@@ -158,12 +141,10 @@ func (m *Manager) collectMem() {
 		}
 	}
 
-	m.mu.Lock()
-	m.info.Mem = info
-	m.mu.Unlock()
+	return info
 }
 
-func (m *Manager) collectLoad() {
+func (m *Manager) collectLoad() *types.LoadInfo {
 	info := &types.LoadInfo{}
 
 	a, err := load.Avg()
@@ -173,7 +154,6 @@ func (m *Manager) collectLoad() {
 		info.Stat = a
 	}
 
-	// Skip load.Misc() in lite mode - it's expensive (~20ms) and rarely used
 	if !m.opts.Lite {
 		mi, err := load.Misc()
 		if err != nil {
@@ -183,12 +163,10 @@ func (m *Manager) collectLoad() {
 		}
 	}
 
-	m.mu.Lock()
-	m.info.Load = info
-	m.mu.Unlock()
+	return info
 }
 
-func (m *Manager) collectDisk() {
+func (m *Manager) collectDisk() *types.DiskInfo {
 	info := &types.DiskInfo{}
 
 	u, err := disk.Usage(m.opts.DiskUsagePath)
@@ -198,21 +176,18 @@ func (m *Manager) collectDisk() {
 		info.Stat = u
 	}
 
-	// Skip disk IO counters in lite mode - rarely used in status bar templates
 	if !m.opts.Lite {
 		i, err := disk.IOCounters()
 		if err != nil {
 			_, _ = fmt.Fprintln(os.Stderr, err)
 		} else {
 			for _, v := range i {
-				info.Counters = append(info.Counters, &v)
+				info.Counters = append(info.Counters, v)
 			}
 		}
 	}
 
-	m.mu.Lock()
-	m.info.Disk = info
-	m.mu.Unlock()
+	return info
 }
 
 // ParseNames converts string slice to CollectorName slice

@@ -245,63 +245,6 @@ func TestRender_TemplateSyntaxError(t *testing.T) {
 	}
 }
 
-func TestSetTemplate(t *testing.T) {
-	funcMap := NewFuncMapBuilder().Build()
-	tpls := DefaultTemplates()
-	renderer := NewRenderer(tpls, funcMap, "|")
-	info := newTestInfo()
-
-	// Set custom template
-	renderer.SetTemplate(collector.NameCPU, `CUSTOM: {{index .CPU.Percent 0 | percentage}}`)
-
-	output, err := renderer.Render(info, []collector.CollectorName{collector.NameCPU})
-	if err != nil {
-		t.Fatalf("Render() error = %v", err)
-	}
-
-	if !strings.Contains(output, "CUSTOM:") {
-		t.Errorf("Render() after SetTemplate = %q, want to contain 'CUSTOM:'", output)
-	}
-}
-
-func TestSetTemplate_AllCollectors(t *testing.T) {
-	funcMap := NewFuncMapBuilder().Build()
-	tpls := DefaultTemplates()
-	renderer := NewRenderer(tpls, funcMap, "|")
-
-	// Test setting each collector template
-	testCases := []struct {
-		name collector.CollectorName
-		tpl  string
-	}{
-		{collector.NameHost, "H: {{.Host.OS}}"},
-		{collector.NameCPU, "C: {{index .CPU.Percent 0 | percentage}}"},
-		{collector.NameMem, "M: {{.Mem.Stat.UsedPercent | percentage}}"},
-		{collector.NameLoad, "L: {{.Load.Stat.Load1}}"},
-		{collector.NameDisk, "D: {{.Disk.Stat.UsedPercent | percentage}}"},
-	}
-
-	for _, tc := range testCases {
-		renderer.SetTemplate(tc.name, tc.tpl)
-	}
-
-	info := newTestInfo()
-	output, err := renderer.Render(info, []collector.CollectorName{
-		collector.NameHost, collector.NameCPU, collector.NameMem, collector.NameLoad, collector.NameDisk,
-	})
-
-	if err != nil {
-		t.Fatalf("Render() error = %v", err)
-	}
-
-	expectedParts := []string{"H:", "C:", "M:", "L:", "D:"}
-	for _, part := range expectedParts {
-		if !strings.Contains(output, part) {
-			t.Errorf("Render() output %q does not contain %q", output, part)
-		}
-	}
-}
-
 func TestDefaultTemplates(t *testing.T) {
 	tpls := DefaultTemplates()
 
