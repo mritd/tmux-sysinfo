@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/dustin/go-humanize v1.0.1
-	github.com/shirou/gopsutil/v4 v4.26.3
+	github.com/shirou/gopsutil/v4 v4.26.5
 	github.com/spf13/cobra v1.10.2
 )
 
