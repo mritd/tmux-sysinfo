@@ -3,7 +3,7 @@ module github.com/mritd/tmux-sysinfo
 go 1.26
 
 require (
-	github.com/dustin/go-humanize v1.0.1
+	github.com/dustin/go-humanize v1.1.0
 	github.com/shirou/gopsutil/v4 v4.26.8
 	github.com/spf13/cobra v1.10.2
 )
